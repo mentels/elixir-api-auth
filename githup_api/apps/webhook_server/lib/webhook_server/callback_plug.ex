@@ -3,6 +3,8 @@ defmodule WebhookServer.CallbackPlug do
 
   require Logger
 
+  plug(:signature_header_plug)
+
   plug(Plug.Parsers,
     parsers: [:urlencoded, :json],
     body_reader: {WebhookServer.CacheBodyReader, :read_body, []},
@@ -20,11 +22,22 @@ defmodule WebhookServer.CallbackPlug do
     send_resp(conn, 200, "ok")
   end
 
+  defp signature_header_plug(conn, _opts) do
+    case Plug.Conn.get_req_header(conn, "x-hub-signature") do
+      [] ->
+        Logger.error("Missing x-hub-signature, sending 400 and halting the connection")
+        conn = send_resp(conn, 400, "")
+        halt(conn)
+      [signature] ->
+        assign(conn, :signature, signature)
+    end
+  end
+
   defp body_hmac_plug(conn, _opts) do
     [signature] = Plug.Conn.get_req_header(conn, "x-hub-signature")
 
     if not request_valid?(signature, conn.assigns[:raw_body]) do
-      Logger.error("Invalid signature, sending OK 200 and halting connection")
+      Logger.error("Invalid signature, sending OK 200 and halting the connection")
       conn = send_resp(conn, 200, "ok")
       Plug.Conn.halt(conn)
     else
