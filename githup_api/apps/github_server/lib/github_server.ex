@@ -35,7 +35,7 @@ defmodule GithubServer do
   end
 
   defp signature(secret, payload) do
-    sig = "sha1=" <> :crypto.hmac(:sha, secret, payload) |> Base.encode16(case: :lower)
+    sig = "sha1=" <> (:crypto.hmac(:sha, secret, payload) |> Base.encode16(case: :lower))
     {"X-Hub-Signature", sig}
   end
 

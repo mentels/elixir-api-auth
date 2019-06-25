@@ -35,8 +35,10 @@ defmodule WebhookServer.CallbackPlug do
 
   defp body_hmac_plug(conn, _opts) do
     [signature] = Plug.Conn.get_req_header(conn, "x-hub-signature")
+    body = conn.assigns[:raw_body]
+    Logger.debug("body=#{body}")
 
-    if not request_valid?(signature, conn.assigns[:raw_body]) do
+    if not request_valid?(signature, body) do
       Logger.error("Invalid signature, sending OK 200 and halting the connection")
       conn = send_resp(conn, 200, "ok")
       Plug.Conn.halt(conn)
@@ -47,11 +49,13 @@ defmodule WebhookServer.CallbackPlug do
   end
 
   defp request_valid?(signature, body) do
-    signature == signature(secret(), body)
+    computed_signature = signature(secret(), body)
+    Logger.debug("computed_signature=#{computed_signature}")
+    signature == computed_signature
   end
 
   defp signature(secret, payload) do
-    ("sha1=" <> :crypto.hmac(:sha, secret, payload)) |> Base.encode16(case: :lower)
+    "sha1=" <> (:crypto.hmac(:sha, secret, payload) |> Base.encode16(case: :lower))
   end
 
   defp secret(), do: Env.fetch!(:webhook_server, :secret)
