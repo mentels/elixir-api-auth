@@ -2,3 +2,12 @@ language: elixir
 
 elixir:
   - 1.8
+
+branches:
+  only:
+  - master
+
+before_install: cd $TRAVIS_BUILD_DIR/github_api/
+
+notifications:
+  webhooks: ${WEBHOOK_URL}
