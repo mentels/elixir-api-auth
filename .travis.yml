@@ -10,4 +10,4 @@ branches:
 before_install: cd $TRAVIS_BUILD_DIR/github_api/
 
 notifications:
-  webhooks: ${WEBHOOK_URL}
+  webhooks:   http://e40bb3f1.ngrok.io/api/webhook
