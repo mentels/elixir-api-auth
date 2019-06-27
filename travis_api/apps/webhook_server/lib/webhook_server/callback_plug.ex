@@ -7,10 +7,8 @@ defmodule WebhookServer.CallbackPlug do
   plug(:signature_header_plug)
 
   plug(Plug.Parsers,
-    parsers: [:urlencoded, :json],
-    body_reader: {WebhookServer.CacheBodyReader, :read_body, []},
-    pass: ["text/*"],
-    json_decoder: Jason
+    parsers: [:urlencoded],
+    pass: ["text/*"]
   )
 
   plug(:signature_validation_plug)
@@ -19,7 +17,6 @@ defmodule WebhookServer.CallbackPlug do
 
   post "/api/webhook" do
     Logger.info("POST /api/webhook Params: #{inspect(conn.params)}")
-    Logger.info("POST /api/webhook body: #{inspect(conn.assigns[:raw_body])}")
     send_resp(conn, 200, "ok")
   end
 
@@ -29,17 +26,18 @@ defmodule WebhookServer.CallbackPlug do
         Logger.error("Missing Signature, sending 400 and halting the connection")
         conn = send_resp(conn, 400, "")
         halt(conn)
+
       [signature] ->
+        Logger.debug("signature=#{signature}")
         assign(conn, :signature, signature)
     end
   end
 
   defp signature_validation_plug(conn, _opts) do
-    [signature] = Plug.Conn.get_req_header(conn, "signature")
-    body = conn.assigns[:raw_body]
-    Logger.debug("body=#{body}")
+    decoded_payload = conn.params["payload"]
+    Logger.debug("decoded_payload=#{decoded_payload}")
 
-    if not request_valid?(signature, body) do
+    if not request_valid?(conn.assigns.signature, decoded_payload) do
       Logger.error("Invalid signature, sending OK 200 and halting the connection")
       conn = send_resp(conn, 200, "ok")
       Plug.Conn.halt(conn)
@@ -65,6 +63,7 @@ defmodule WebhookServer.CallbackPlug do
     |> Kernel.<>("/public.pem")
     |> File.read!()
   end
+
   defp public_key_bin(:travis) do
     {:ok, pkey_bin} = TravisClient.public_key_bin()
     pkey_bin
@@ -72,5 +71,4 @@ defmodule WebhookServer.CallbackPlug do
 
   defp pk_method(),
     do: Env.fetch!(:webhook_server, :pk_method) |> String.to_existing_atom()
-
 end

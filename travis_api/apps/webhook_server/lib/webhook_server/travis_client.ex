@@ -8,7 +8,7 @@ defmodule WebhookServer.TravisClient do
   def public_key_bin() do
     case get_travis_config() do
       {:ok, 200, body} ->
-        Logger.debug("decoded_travis_body=#{inspect body}")
+        Logger.debug("decoded_travis_config_body=#{inspect(body)}")
         {:ok, body[:config][:notifications][:webhook][:public_key]}
 
       {:error, code, _body} ->
@@ -30,7 +30,7 @@ defmodule WebhookServer.TravisClient do
   end
 
   defp travis_uri() do
-    URI.parse("https://api.travis-ci.com/config")
+    URI.parse("https://api.travis-ci.org/config")
   end
 
   defp response(conn) do

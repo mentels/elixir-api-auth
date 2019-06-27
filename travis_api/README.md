@@ -3,7 +3,10 @@
 ## Notes
 
 * Travis puts signature of the messages in the `Signature` HTTP header
-* the signature the SHA1-ed payloed signed with a private key and then base64 encoded 
+* the signature the SHA1-ed payload signed with a private key and then base64 encoded 
+    * what is signed is the raw (string) JSON described in 
+      [Webhooks Delivery Format](https://docs.travis-ci.com/user/notifications/#webhooks-delivery-format) which sits under `payload` key and all of that
+      is of `application/x-www-form-urlencoded` type (`urlencoded("payload=\"{...}\"")`)
 * to verify signature it has to be base64 deoced and then verified using the corresponding public key and SHA1 digest
 * more [here](https://docs.travis-ci.com/user/notifications/#verifying-webhook-requests)
 * the example used RSA key pair in PEM format generated with:
@@ -35,3 +38,7 @@ openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 ```
 15:44:56.595 [error] Invalid signature, sending OK 200 and halting connection
 ```
+
+* by default the local key-pair is used
+* if you want the `webhook_server` to work with real TravisCi strat it like:
+    `make webhook_server pk_method=travis`
