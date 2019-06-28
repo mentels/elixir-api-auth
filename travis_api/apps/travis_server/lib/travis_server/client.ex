@@ -8,6 +8,7 @@ defmodule TravisServer.Client do
 
   def call(uri \\ default_uri(), headers \\ [], payload \\ default_payload()) do
     headers = [content_type(), signature(payload) | headers]
+    payload = encode_payload(payload)
     {:ok, conn} = Mint.HTTP.connect(uri.scheme |> String.to_atom(), uri.host, uri.port)
     {:ok, conn, ref} = Mint.HTTP.request(conn, "POST", uri.path, headers, payload)
 
@@ -28,8 +29,12 @@ defmodule TravisServer.Client do
     Jason.encode!(%{"key" => "val"})
   end
 
+  def encode_payload(payload) do
+    "payload=" <> URI.encode_www_form(payload)
+  end
+
   defp content_type() do
-    {"content-type", "application/json"}
+    {"content-type", "application/x-www-form-urlencoded"}
   end
 
   defp signature(payload) do
